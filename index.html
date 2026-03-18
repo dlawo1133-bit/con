@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>연락망 앱</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icon-192.png">
+  <meta name="theme-color" content="#0f172a">
+  <style>
+    :root{
+      --bg:#f1f5f9;
+      --card:#ffffff;
+      --text:#0f172a;
+      --sub:#64748b;
+      --line:#e2e8f0;
+      --strong:#0f172a;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      background:var(--bg);
+      color:var(--text);
+    }
+    .wrap{
+      max-width:520px;
+      margin:0 auto;
+      min-height:100vh;
+      padding:24px 16px 32px;
+    }
+    .top{
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:rgba(241,245,249,.96);
+      backdrop-filter:blur(8px);
+      padding-top:8px;
+      padding-bottom:14px;
+    }
+    .search-wrap{
+      position:relative;
+      margin-bottom:14px;
+    }
+    .search{
+      width:100%;
+      padding:16px 48px 16px 18px;
+      border:none;
+      outline:none;
+      border-radius:22px;
+      background:#ffffff;
+      box-shadow: 0 0 0 1px #e5e7eb;
+      font-size:16px;
+    }
+    .clear-btn{
+      position:absolute;
+      right:10px;
+      top:50%;
+      transform:translateY(-50%);
+      width:32px;
+      height:32px;
+      border:none;
+      border-radius:50%;
+      background:#f1f5f9;
+      color:#475569;
+      font-size:18px;
+      display:none;
+    }
+    .tabs{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:10px;
+    }
+    .tab{
+      padding:14px 12px;
+      border-radius:16px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:#334155;
+      font-weight:700;
+      font-size:14px;
+    }
+    .tab.active{
+      background:#1f2937;
+      color:#fff;
+      border-color:#1f2937;
+    }
+    .toolbar{
+      display:none;
+      justify-content:center;
+      margin-top:12px;
+    }
+    .toolbar.show{display:flex}
+    .chip{
+      padding:10px 14px;
+      border:none;
+      border-radius:999px;
+      background:#fff;
+      color:#475569;
+      box-shadow:0 0 0 1px var(--line);
+      font-size:12px;
+      font-weight:700;
+    }
+    .chip.active{
+      background:#0f172a;
+      color:#fff;
+      box-shadow:none;
+    }
+    .section{
+      margin-top:18px;
+    }
+    .meta{
+      font-size:13px;
+      color:var(--sub);
+      margin:0 2px 10px;
+      font-weight:700;
+    }
+    .state{
+      margin-top:18px;
+      padding:28px 16px;
+      border-radius:24px;
+      background:#fff;
+      box-shadow:0 0 0 1px var(--line);
+      text-align:center;
+      color:var(--sub);
+      font-size:14px;
+    }
+    .list{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .item{
+      background:#fff;
+      border-radius:20px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 0 0 1px #e2e8f0;
+      overflow:hidden;
+    }
+    .item-head{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:14px 14px;
+    }
+    .item-main{
+      flex:1;
+      min-width:0;
+      border:none;
+      background:transparent;
+      padding:0;
+      text-align:left;
+    }
+    .name-row{
+      display:flex;
+      gap:6px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .name{
+      font-size:15px;
+      font-weight:800;
+      color:#0f172a;
+      min-width:0;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      white-space:nowrap;
+      max-width:100%;
+    }
+    .tag{
+      display:inline-flex;
+      align-items:center;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      background:#f8fafc;
+      color:#475569;
+      box-shadow:0 0 0 1px var(--line) inset;
+    }
+    .status{
+      display:inline-flex;
+      align-items:center;
+      gap:4px;
+      padding:3px 8px;
+      border-radius:999px;
+      font-size:11px;
+      font-weight:800;
+      box-shadow:0 0 0 1px inset;
+    }
+   .status.working { background:#ecfdf5; color:#15803d; }
+   .status.off { background:#f1f5f9; color:#475569; }
+   .status.annual { background:#fef9c3; color:#a16207; }
+   .status.half { background:#ffedd5; color:#c2410c; }
+   .status.injury { background:#fff1f2; color:#be123c; }
+   .status.vacation { background:#fef3c7; color:#b45309; }
+   .status.training { background:#eff6ff; color:#1d4ed8; }
+   .status.sick { background:#f5f3ff; color:#7c3aed; }
+    .sub{
+      margin-top:5px;
+      font-size:13px;
+      color:#64748b;
+    }
+    .call{
+      width:44px;
+      height:44px;
+      border-radius:16px;
+      background:#34c759;
+      color:#ffffff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+      transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+      box-shadow: 0 4px 10px rgba(52, 199, 89, 0.22);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-decoration:none;
+      flex:0 0 auto;
+      font-size:19px;
+    }
+
+    .call:active {
+      transform:scale(0.94);
+      opacity: 0.9;
+    }
+    .detail{
+      border-top:1px solid #f1f5f9;
+      background:#f8fafc;
+      padding:12px 14px 14px;
+      font-size:13px;
+      color:#475569;
+      display:none;
+    }
+    .detail.show{display:block}
+    .detail strong{color:#0f172a}
+    .line{margin-top:4px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="top">
+      <div class="search-wrap">
+        <input id="search" class="search" placeholder="이름 / 초성 / 번호 검색" />
+        <button id="clearBtn" class="clear-btn" type="button">×</button>
+      </div>
+
+      <div class="tabs">
+        <button class="tab" data-tab="공통">공통</button>
+        <button class="tab" data-tab="관리자">관리자</button>
+        <button class="tab" data-tab="환경A">환경A</button>
+        <button class="tab" data-tab="환경B">환경B</button>
+      </div>
+
+      <div id="toolbar" class="toolbar">
+        <button id="workingChip" class="chip" type="button">근무중만 표시</button>
+      </div>
+    </div>
+
+    <div id="content" class="section"></div>
+  </div>
+
+<script>
+const DATA_URL = "https://script.google.com/macros/s/AKfycbzPCmUgjbqx3hj8xi4PNYYpgSk6b6XDJYIF3E_VVB6F9dmZxMH7OxFVix3R5m6f7YY/exec";
+
+// 기본휴무 기준 시작 시점
+const BASE_YEAR = 2026;
+const BASE_MONTH = 1;
+
+const DAY_ORDER = ["일","월","화","수","목","금","토"];
+
+let DATA = [];
+let LEAVES = [];
+
+let currentTab = "";
+let onlyWorking = false;
+let isLoaded = false;
+let hasInteracted = false;
+let expandedId = "";
+
+const contentEl = document.getElementById("content");
+const searchEl = document.getElementById("search");
+const clearBtnEl = document.getElementById("clearBtn");
+const toolbarEl = document.getElementById("toolbar");
+const workingChipEl = document.getElementById("workingChip");
+const tabButtons = [...document.querySelectorAll(".tab")];
+
+function normalize(v){ return String(v || "").replace(/\s+/g,"").toLowerCase(); }
+
+function choseong(text=""){
+  const CHO=["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+  return [...String(text)].map(c=>{
+    const code=c.charCodeAt(0)-44032;
+    if(code>=0 && code<=11171) return CHO[Math.floor(code/588)];
+    return c;
+  }).join("");
+}
+
+function formatPhone(value=""){
+  const digits = String(value).replace(/[^\d]/g,"");
+  if(!digits) return "";
+  if(digits.startsWith("02")){
+    if(digits.length===9) return digits.replace(/(02)(\d{3})(\d{4})/,"$1-$2-$3");
+    if(digits.length===10) return digits.replace(/(02)(\d{4})(\d{4})/,"$1-$2-$3");
+  }
+  if(digits.length===8) return digits.replace(/(\d{4})(\d{4})/,"$1-$2");
+  if(digits.length===10) return digits.replace(/(\d{3})(\d{3})(\d{4})/,"$1-$2-$3");
+  if(digits.length===11) return digits.replace(/(\d{3})(\d{4})(\d{4})/,"$1-$2-$3");
+  return value;
+}
+
+function getWorkBaseDate(){
+  const now = new Date();
+  const hour = now.getHours();
+  const minute = now.getMinutes();
+  const beforeShiftEnd = hour < 7 || (hour === 7 && minute <= 30);
+  const base = new Date(now);
+  if(beforeShiftEnd) base.setDate(base.getDate()-1);
+  return base;
+}
+
+function getShiftCount(baseDate){
+  const currentYear = baseDate.getFullYear();
+  const currentMonth = baseDate.getMonth() + 1;
+  const monthsElapsed = (currentYear - BASE_YEAR) * 12 + (currentMonth - BASE_MONTH);
+  return Math.floor(monthsElapsed / 3);
+}
+
+function rotateDay(day, shiftCount){
+  const index = DAY_ORDER.indexOf(day);
+  if(index === -1) return "";
+  return DAY_ORDER[(index + shiftCount) % 7];
+}
+
+function getLeaveStatus(raw) {
+  const baseDate = getWorkBaseDate();
+
+  const year = baseDate.getFullYear();
+  const month = String(baseDate.getMonth() + 1).padStart(2, "0");
+  const day = String(baseDate.getDate()).padStart(2, "0");
+
+  const today = `${year}-${month}-${day}`;
+
+  const found = LEAVES.find(item =>
+    item["이름"] === raw["이름"] &&
+    item["날짜"] === today
+  );
+
+  return found ? found["상태"] : "";
+}
+
+function getStatus(raw){
+
+ // 🔥 1순위: 연차 확인
+  const leaveStatus = getLeaveStatus(raw);
+  if (leaveStatus) return leaveStatus;
+
+  // 🔥 2순위: 예외상태
+  if (raw["예외상태"]) return String(raw["예외상태"]).trim();
+
+  // 🔥 3순위: 기본휴무 계산
+  const baseDate = getWorkBaseDate();
+  const dayName = DAY_ORDER[baseDate.getDay()];
+  const shiftCount = getShiftCount(baseDate);
+
+  const off1 = rotateDay(String(raw["기본휴무1"] || "").trim(), shiftCount);
+  const off2 = rotateDay(String(raw["기본휴무2"] || "").trim(), shiftCount);
+
+  if ([off1, off2].includes(dayName)) return "휴무";
+
+  return "근무중";
+}
+
+function getStatusIcon(status){
+  if(status === "근무중") return "🟢";
+  if(status === "휴무") return "⚪";
+  if(status === "연차") return "🟡";
+  if(status === "반차") return "🟠";
+  if(status === "산재") return "🔴";
+  if(status === "휴가") return "🟡";
+  if(status === "교육") return "🔵";
+  if(status === "병가") return "🟣";
+  return "⚪";
+}
+
+function getStatusClass(status){
+  if(status === "근무중") return "working";
+  if(status === "휴무") return "off";
+  if(status === "연차") return "annual";
+  if(status === "반차") return "half";
+  if(status === "산재") return "injury";
+  if(status === "휴가") return "vacation";
+  if(status === "교육") return "training";
+  if(status === "병가") return "sick";
+  return "off";
+}
+function phoneHref(phone=""){
+  return `tel:${String(phone).replace(/[^\d+]/g,"")}`;
+}
+
+function rankSearch(item, q){
+  if(!q) return 999;
+  const name = normalize(item.name);
+  const initial = normalize(choseong(item.name));
+  const phone = normalize(item.phone);
+  const area = normalize(item.area);
+  const part = normalize(item.part);
+  const memo = normalize(item.memo);
+
+  if(name === q) return 1;
+  if(name.startsWith(q)) return 2;
+  if(name.includes(q)) return 3;
+  if(initial === q) return 4;
+  if(initial.startsWith(q)) return 5;
+  if(initial.includes(q)) return 6;
+  if(phone.includes(q)) return 7;
+  if(area.includes(q)) return 8;
+  if(part.includes(q)) return 9;
+  if(memo.includes(q)) return 10;
+  return 999;
+}
+
+function setTab(tab){
+  currentTab = tab;
+  hasInteracted = true;
+  expandedId = "";
+  tabButtons.forEach(btn => btn.classList.toggle("active", btn.dataset.tab === tab));
+  render();
+}
+
+function toggleWorking(){
+  onlyWorking = !onlyWorking;
+  workingChipEl.classList.toggle("active", onlyWorking);
+  render();
+}
+
+function buildList(){
+  const q = normalize(searchEl.value);
+
+  if(q){
+    return DATA
+      .filter(item => {
+        const values = [item.name, item.phone, item.area, item.part, item.memo, choseong(item.name)].map(normalize);
+        const hit = values.some(v => v.includes(q));
+        const workingHit = !onlyWorking || item.type === "common" || item.status === "근무중";
+        return hit && workingHit;
+      })
+      .sort((a,b) => rankSearch(a, q) - rankSearch(b, q));
+  }
+
+  if(!currentTab) return [];
+
+  let list = DATA.filter(item => {
+    if(currentTab === "공통") return item.type === "common";
+    if(currentTab === "관리자") return item.type === "employee" && item.part === "관리자";
+    if(currentTab === "환경A") return item.type === "employee" && (item.part === "환경A조" || item.part === "환경A");
+    if(currentTab === "환경B") return item.type === "employee" && (item.part === "환경B조" || item.part === "환경B");
+    return false;
+  });
+
+  if(onlyWorking && currentTab !== "공통"){
+    list = list.filter(item => item.status === "근무중");
+  }
+
+  return list;
+}
+
+function employeeHtml(item){
+  const isOpen = expandedId === item.id;
+  return `
+    <div class="item">
+      <div class="item-head">
+        <button class="item-main" type="button" onclick="toggleDetail('${item.id}')">
+          <div class="name-row">
+            <div class="name">${item.name}</div>
+            <span class="tag">${item.part}</span>
+            <span class="status ${getStatusClass(item.status)}">${getStatusIcon(item.status)} ${item.status}</span>
+          </div>
+        </button>
+        <a class="call" href="${phoneHref(item.phone)}">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.63 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.29a2 2 0 0 1 2.11-.45c.84.3 1.72.51 2.62.63A2 2 0 0 1 22 16.92z"/>
+  </svg>
+</a>
+      </div>
+      <div class="detail ${isOpen ? 'show' : ''}">
+        <div><strong>${formatPhone(item.phone) || "번호 없음"}</strong></div>
+        ${item.dayOff ? `<div class="line">정기휴무: <strong>${item.dayOff}</strong></div>` : ``}
+        ${item.area ? `<div class="line">담당구역: <strong>${item.area}</strong></div>` : ``}
+        ${item.memo ? `<div class="line">메모: <strong>${item.memo}</strong></div>` : ``}
+      </div>
+    </div>
+  `;
+}
+
+function commonHtml(item){
+  return `
+    <div class="item">
+      <div class="item-head">
+        <div class="item-main">
+          <div class="name-row">
+            <div class="name">${item.name}</div>
+          </div>
+          <div class="sub">${formatPhone(item.phone)}</div>
+        </div>
+        <a class="call" href="tel:${item.phone}">
+  <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.8 19.8 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.12.9.33 1.78.63 2.62a2 2 0 0 1-.45 2.11L8 9.91a16 16 0 0 0 6.09 6.09l1.46-1.29a2 2 0 0 1 2.11-.45c.84.3 1.72.51 2.62.63A2 2 0 0 1 22 16.92z"/>
+  </svg>
+</a>
+      </div>
+    </div>
+  `;
+}
+
+function render(){
+  clearBtnEl.style.display = searchEl.value ? "block" : "none";
+  toolbarEl.classList.toggle("show", hasInteracted || !!searchEl.value.trim());
+
+  if(!isLoaded){
+    contentEl.innerHTML = `<div class="state">불러오는 중...</div>`;
+    return;
+  }
+
+  // 첫 화면은 정말 깔끔하게
+  if(!hasInteracted && !searchEl.value.trim()){
+    contentEl.innerHTML = ``;
+    return;
+  }
+
+  const list = buildList();
+
+  if(searchEl.value.trim()){
+    if(list.length === 0){
+      contentEl.innerHTML = `
+        <div class="meta">검색 결과 0건</div>
+        <div class="state">검색 결과가 없어.</div>
+      `;
+      return;
+    }
+    contentEl.innerHTML = `
+      <div class="meta">검색 결과 ${list.length}건</div>
+      <div class="list">${list.map(item => item.type === "common" ? commonHtml(item) : employeeHtml(item)).join("")}</div>
+    `;
+    return;
+  }
+
+  if(list.length === 0){
+    contentEl.innerHTML = `<div class="state">표시할 목록이 없어.</div>`;
+    return;
+  }
+
+  contentEl.innerHTML = `<div class="list">${list.map(item => item.type === "common" ? commonHtml(item) : employeeHtml(item)).join("")}</div>`;
+}
+
+function toggleDetail(id){
+  expandedId = expandedId === id ? "" : id;
+  render();
+}
+
+searchEl.addEventListener("input", () => {
+  hasInteracted = true;
+  render();
+});
+
+clearBtnEl.addEventListener("click", () => {
+  searchEl.value = "";
+  render();
+});
+
+workingChipEl.addEventListener("click", toggleWorking);
+tabButtons.forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
+
+const CACHE_KEY = "contact_data";
+
+const cached = localStorage.getItem(CACHE_KEY);
+
+if (cached) {
+  DATA = JSON.parse(cached);
+  isLoaded = true;
+  render();
+}
+
+fetch(DATA_URL)
+  .then(r => r.json())
+  .then(d => {
+    LEAVES = d.leaves || [];
+
+    const emp = (d.employees || []).map((e, i) => ({
+      id: `emp-${i}`,
+      type: "employee",
+      name: e["이름"] || "",
+      phone: e["전화번호"] || "",
+      part: e["파트"] || "",
+      memo: e["메모"] || "",
+      area: e["담당구역"] || "",
+      dayOff: [e["기본휴무1"], e["기본휴무2"]].filter(Boolean).join(", "),
+      status: getStatus(e)
+    }));
+
+    const com = (d.commons || []).map((c, i) => ({
+      id: `com-${i}`,
+      type: "common",
+      name: c["이름"] || "",
+      phone: c["전화번호"] || "",
+      part: c["카테고리"] || "",
+      memo: c["메모"] || "",
+      area: ""
+    }));
+
+    DATA = [...emp, ...com];
+
+    localStorage.setItem(CACHE_KEY, JSON.stringify(DATA));
+
+    isLoaded = true;
+    render();
+  })
+  .catch(err => {
+    console.error(err);
+    isLoaded = true;
+    contentEl.innerHTML = `<div class="state">데이터 불러오기 오류</div>`;
+  });
+
+render();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("sw.js");
+}
+</script>
+</body>
+</html>
