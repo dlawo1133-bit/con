@@ -380,6 +380,7 @@ function getOffDays(raw, shiftCount) {
 }
 
 function getStatus(raw){
+
   const leaveStatus = getLeaveStatus(raw);
   if (leaveStatus) return leaveStatus;
 
@@ -393,23 +394,21 @@ function getStatus(raw){
     const fixedOffDays = [
       String(raw["기본휴무1"] || "").trim(),
       String(raw["기본휴무2"] || "").trim()
-    ].filter(Boolean);
-
+    ];
     return fixedOffDays.includes(dayName) ? "휴무" : "근무중";
   }
 
-  // 일반 직원
-  const currentOffDays = [
-    String(raw["기본휴무1"] || "").trim(),
-    String(raw["기본휴무2"] || "").trim()
-  ].filter(Boolean);
+  const shiftCount = getShiftCount(baseDate);
 
-  if (isChangeDate(baseDate)) {
-    const nextOffDays = currentOffDays.map(day => rotateDay(day, 1));
-    return nextOffDays.includes(dayName) ? "휴무" : "근무중";
-  }
+  // 교체일이면 shift +1 적용
+  const appliedShift = isChangeDate(baseDate)
+    ? shiftCount + 1
+    : shiftCount;
 
-  return currentOffDays.includes(dayName) ? "휴무" : "근무중";
+  const off1 = rotateDay(String(raw["기본휴무1"] || "").trim(), appliedShift);
+  const off2 = rotateDay(String(raw["기본휴무2"] || "").trim(), appliedShift);
+
+  return [off1, off2].includes(dayName) ? "휴무" : "근무중";
 }
 function getStatusIcon(status){
   if(status === "근무중") return "🟢";
