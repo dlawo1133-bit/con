@@ -257,7 +257,15 @@
 
     <div id="content" class="section"></div>
   </div>
-
+const SHIFT_PATTERNS = [
+  ["토","일"],
+  ["일","월"],
+  ["월","화"],
+  ["화","수"],
+  ["수","목"],
+  ["목","금"],
+  ["금","토"]
+];
 <script>
 const DATA_URL = "https://script.google.com/macros/s/AKfycbzPCmUgjbqx3hj8xi4PNYYpgSk6b6XDJYIF3E_VVB6F9dmZxMH7OxFVix3R5m6f7YY/exec";
 
@@ -316,7 +324,11 @@ function getWorkBaseDate(){
   if(beforeShiftEnd) base.setDate(base.getDate()-1);
   return base;
 }
-
+function findPatternIndex(off1, off2) {
+  return SHIFT_PATTERNS.findIndex(p =>
+    p[0] === off1 && p[1] === off2
+  );
+}
 function getShiftCount(baseDate){
   const currentYear = baseDate.getFullYear();
   const currentMonth = baseDate.getMonth() + 1;
@@ -391,24 +403,31 @@ function getStatus(raw){
 
   // 관리자
   if (String(raw["파트"] || "").trim() === "관리자") {
-    const fixedOffDays = [
+    const fixed = [
       String(raw["기본휴무1"] || "").trim(),
       String(raw["기본휴무2"] || "").trim()
     ];
-    return fixedOffDays.includes(dayName) ? "휴무" : "근무중";
+    return fixed.includes(dayName) ? "휴무" : "근무중";
   }
+
+  const off1 = String(raw["기본휴무1"] || "").trim();
+  const off2 = String(raw["기본휴무2"] || "").trim();
+
+  const index = findPatternIndex(off1, off2);
+  if (index === -1) return "근무중";
 
   const shiftCount = getShiftCount(baseDate);
 
-  // 교체일이면 shift +1 적용
+  // 교체일이면 +1
   const appliedShift = isChangeDate(baseDate)
     ? shiftCount + 1
     : shiftCount;
 
-  const off1 = rotateDay(String(raw["기본휴무1"] || "").trim(), appliedShift);
-  const off2 = rotateDay(String(raw["기본휴무2"] || "").trim(), appliedShift);
+  const newIndex = (index + appliedShift) % SHIFT_PATTERNS.length;
 
-  return [off1, off2].includes(dayName) ? "휴무" : "근무중";
+  const newPattern = SHIFT_PATTERNS[newIndex];
+
+  return newPattern.includes(dayName) ? "휴무" : "근무중";
 }
 function getStatusIcon(status){
   if(status === "근무중") return "🟢";
