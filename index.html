@@ -512,6 +512,9 @@ function employeeHtml(item){
         <button class="item-main" type="button" onclick="toggleDetail('${item.id}')">
           <div class="name-row">
             <div class="name">${item.name}</div>
+<div style="font-size:12px;color:red">
+  ${item.name} / ${item.status}
+</div>
             <span class="tag">${item.part}</span>
             <span class="status ${getStatusClass(item.status)}">${getStatusIcon(item.status)} ${item.status}</span>
           </div>
