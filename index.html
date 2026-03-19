@@ -270,9 +270,7 @@ const SHIFT_PATTERNS = [
   ["목","금"],
   ["금","토"]
 ];
-// 기본휴무 기준 시작 시점
-const BASE_YEAR = 2026;
-const BASE_MONTH = 1;
+
 
 const DAY_ORDER = ["일","월","화","수","목","금","토"];
 
@@ -330,34 +328,21 @@ function findPatternIndex(off1, off2) {
     p[0] === off1 && p[1] === off2
   );
 }
-function getShiftCount(baseDate){
-  const currentYear = baseDate.getFullYear();
-  const currentMonth = baseDate.getMonth() + 1;
-  const monthsElapsed = (currentYear - BASE_YEAR) * 12 + (currentMonth - BASE_MONTH);
-  return Math.floor(monthsElapsed / 3);
-}
 
-function rotateDay(day, shiftCount){
-  const index = DAY_ORDER.indexOf(day);
-  if(index === -1) return "";
-  return DAY_ORDER[(index + shiftCount) % 7];
-}
+
+
 
 function getLeaveStatus(raw) {
   const baseDate = getWorkBaseDate();
-
-  const year = baseDate.getFullYear();
-  const month = String(baseDate.getMonth() + 1).padStart(2, "0");
-  const day = String(baseDate.getDate()).padStart(2, "0");
-
-  const today = `${year}-${month}-${day}`;
+  const today = formatDateKey(baseDate);
+  const rawName = String(raw["이름"] || "").trim();
 
   const found = LEAVES.find(item =>
-    item["이름"] === raw["이름"] &&
-    item["날짜"] === today
+    String(item["이름"] || "").trim() === rawName &&
+    String(item["날짜"] || "").trim() === today
   );
 
-  return found ? found["상태"] : "";
+  return found ? String(found["상태"] || "").trim() : "";
 }
 function formatDateKey(dateValue) {
   const d = new Date(dateValue);
@@ -386,11 +371,7 @@ function getShiftCount(baseDate) {
   }).length;
 }
 
-function getOffDays(raw, shiftCount) {
-  const off1 = rotateDay(String(raw["기본휴무1"] || "").trim(), shiftCount);
-  const off2 = rotateDay(String(raw["기본휴무2"] || "").trim(), shiftCount);
-  return [off1, off2].filter(Boolean);
-}
+
 
 function getStatus(raw){
 
@@ -532,7 +513,7 @@ function employeeHtml(item){
         <button class="item-main" type="button" onclick="toggleDetail('${item.id}')">
           <div class="name-row">
             <div class="name">${item.name}</div>
-<div style="font-size:12px;color:#dc2626;">변경일수: ${CHANGES.length}</div>
+
             <span class="tag">${item.part}</span>
             <span class="status ${getStatusClass(item.status)}">${getStatusIcon(item.status)} ${item.status}</span>
           </div>
@@ -545,7 +526,6 @@ function employeeHtml(item){
       </div>
       <div class="detail ${isOpen ? 'show' : ''}">
         <div><strong>${formatPhone(item.phone) || "번호 없음"}</strong></div>
-        ${item.dayOff ? `<div class="line">정기휴무: <strong>${item.dayOff}</strong></div>` : ``}
         ${item.area ? `<div class="line">담당구역: <strong>${item.area}</strong></div>` : ``}
         ${item.memo ? `<div class="line">메모: <strong>${item.memo}</strong></div>` : ``}
       </div>
@@ -638,7 +618,7 @@ fetch(DATA_URL + "?v=" + Date.now())
   .then(d => {
     LEAVES = d.leaves || [];
     CHANGES = d.changes || [];
-    alert("changes 길이: " + CHANGES.length);
+    
     const emp = (d.employees || []).map((e, i) => ({
       id: `emp-${i}`,
       type: "employee",
@@ -673,13 +653,7 @@ fetch(DATA_URL + "?v=" + Date.now())
 
 render();
 
-render();
 
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.getRegistrations().then(regs => {
-    regs.forEach(reg => reg.unregister());
-  });
-}
 </script>
 </body>
 </html>
