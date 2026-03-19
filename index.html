@@ -269,7 +269,7 @@ const DAY_ORDER = ["일","월","화","수","목","금","토"];
 
 let DATA = [];
 let LEAVES = [];
-
+let CHANGES = [];
 let currentTab = "";
 let onlyWorking = false;
 let isLoaded = false;
@@ -346,27 +346,67 @@ function getLeaveStatus(raw) {
 
   return found ? found["상태"] : "";
 }
+function formatDateKey(dateValue) {
+  const d = new Date(dateValue);
+  if (isNaN(d)) return String(dateValue).trim();
 
-function getStatus(raw){
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
- // 🔥 1순위: 연차 확인
+function isChangeDate(baseDate) {
+  const today = formatDateKey(baseDate);
+  return CHANGES.some(item => formatDateKey(item["날짜"]) === today);
+}
+
+function getShiftCount(baseDate) {
+  const today = formatDateKey(baseDate);
+
+  return CHANGES.filter(item => {
+    const changeDate = formatDateKey(item["날짜"]);
+    return changeDate < today; // 오늘 이전 교체일만 반영
+  }).length;
+}
+
+function getOffDays(raw, shiftCount) {
+  const off1 = rotateDay(String(raw["기본휴무1"] || "").trim(), shiftCount);
+  const off2 = rotateDay(String(raw["기본휴무2"] || "").trim(), shiftCount);
+  return [off1, off2].filter(Boolean);
+}
+
+function getStatus(raw) {
   const leaveStatus = getLeaveStatus(raw);
   if (leaveStatus) return leaveStatus;
 
-  // 🔥 2순위: 예외상태
   if (raw["예외상태"]) return String(raw["예외상태"]).trim();
 
-  // 🔥 3순위: 기본휴무 계산
   const baseDate = getWorkBaseDate();
   const dayName = DAY_ORDER[baseDate.getDay()];
-  const shiftCount = getShiftCount(baseDate);
 
-  const off1 = rotateDay(String(raw["기본휴무1"] || "").trim(), shiftCount);
-  const off2 = rotateDay(String(raw["기본휴무2"] || "").trim(), shiftCount);
+  // 관리자: 휴무 고정
+  if (String(raw["파트"] || "").trim() === "관리자") {
+    const fixedOffDays = [
+      String(raw["기본휴무1"] || "").trim(),
+      String(raw["기본휴무2"] || "").trim()
+    ].filter(Boolean);
 
-  if ([off1, off2].includes(dayName)) return "휴무";
+    return fixedOffDays.includes(dayName) ? "휴무" : "근무중";
+  }
 
-  return "근무중";
+  // 일반 직원: 교체일 이전까지 반영된 shiftCount
+  const currentShiftCount = getShiftCount(baseDate);
+
+  // 오늘이 교체일이면: 오늘부터 새 패턴 시작
+  if (isChangeDate(baseDate)) {
+    const newOffDays = getOffDays(raw, currentShiftCount + 1);
+    return newOffDays.includes(dayName) ? "휴무" : "근무중";
+  }
+
+  // 평소: 현재 패턴
+  const currentOffDays = getOffDays(raw, currentShiftCount);
+  return currentOffDays.includes(dayName) ? "휴무" : "근무중";
 }
 
 function getStatusIcon(status){
@@ -583,7 +623,8 @@ fetch(DATA_URL)
   .then(r => r.json())
   .then(d => {
     LEAVES = d.leaves || [];
-
+    CHANGES = d.changes || [];
+    
     const emp = (d.employees || []).map((e, i) => ({
       id: `emp-${i}`,
       type: "employee",
