@@ -1,7 +1,8 @@
 {
   "name": "연락망",
   "short_name": "연락망",
-  "start_url": "/",
+  "start_url": "/con/",
+  "scope": "/con/",
   "display": "standalone",
   "background_color": "#f1f5f9",
   "theme_color": "#0f172a",
