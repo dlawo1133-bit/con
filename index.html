@@ -385,30 +385,34 @@ function getStatus(raw) {
   const baseDate = getWorkBaseDate();
   const dayName = DAY_ORDER[baseDate.getDay()];
 
-  // 관리자: 휴무 고정
-  if (String(raw["파트"] || "").trim() === "관리자") {
-    const fixedOffDays = [
-      String(raw["기본휴무1"] || "").trim(),
-      String(raw["기본휴무2"] || "").trim()
-    ].filter(Boolean);
+ const baseDate = getWorkBaseDate();
+const dayName = DAY_ORDER[baseDate.getDay()];
 
-    return fixedOffDays.includes(dayName) ? "휴무" : "근무중";
-  }
+// 관리자: 휴무 고정
+if (String(raw["파트"] || "").trim() === "관리자") {
+  const fixedOffDays = [
+    String(raw["기본휴무1"] || "").trim(),
+    String(raw["기본휴무2"] || "").trim()
+  ].filter(Boolean);
 
-  // 일반 직원: 교체일 이전까지 반영된 shiftCount
-  const currentShiftCount = getShiftCount(baseDate);
-
-  // 오늘이 교체일이면: 오늘부터 새 패턴 시작
-  if (isChangeDate(baseDate)) {
-    const newOffDays = getOffDays(raw, currentShiftCount + 1);
-    return newOffDays.includes(dayName) ? "휴무" : "근무중";
-  }
-
-  // 평소: 현재 패턴
-  const currentOffDays = getOffDays(raw, currentShiftCount);
-  return currentOffDays.includes(dayName) ? "휴무" : "근무중";
+  return fixedOffDays.includes(dayName) ? "휴무" : "근무중";
 }
 
+// 일반 직원: 현재 시트값을 현재 패턴으로 봄
+const currentOffDays = [
+  String(raw["기본휴무1"] || "").trim(),
+  String(raw["기본휴무2"] || "").trim()
+].filter(Boolean);
+
+// 오늘이 교체일이면 현재 패턴에서 한 칸 이동한 새 패턴 적용
+if (isChangeDate(baseDate)) {
+  const nextOffDays = currentOffDays.map(day => rotateDay(day, 1));
+  return nextOffDays.includes(dayName) ? "휴무" : "근무중";
+}
+
+// 평소엔 현재 시트값 그대로
+return currentOffDays.includes(dayName) ? "휴무" : "근무중";
+}
 function getStatusIcon(status){
   if(status === "근무중") return "🟢";
   if(status === "휴무") return "⚪";
