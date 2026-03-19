@@ -1,7 +1,7 @@
 {
   "name": "연락망",
   "short_name": "연락망",
-  "start_url": "./",
+  "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f1f5f9",
