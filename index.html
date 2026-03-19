@@ -638,7 +638,7 @@ fetch(DATA_URL + "?v=" + Date.now())
   .then(d => {
     LEAVES = d.leaves || [];
     CHANGES = d.changes || [];
-
+    alert("changes 길이: " + CHANGES.length);
     const emp = (d.employees || []).map((e, i) => ({
       id: `emp-${i}`,
       type: "employee",
@@ -673,6 +673,13 @@ fetch(DATA_URL + "?v=" + Date.now())
 
 render();
 
+render();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(reg => reg.unregister());
+  });
+}
 </script>
 </body>
 </html>
