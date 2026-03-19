@@ -257,6 +257,10 @@
 
     <div id="content" class="section"></div>
   </div>
+
+<script>
+const DATA_URL = "https://script.google.com/macros/s/AKfycbzPCmUgjbqx3hj8xi4PNYYpgSk6b6XDJYIF3E_VVB6F9dmZxMH7OxFVix3R5m6f7YY/exec";
+
 const SHIFT_PATTERNS = [
   ["토","일"],
   ["일","월"],
@@ -266,9 +270,6 @@ const SHIFT_PATTERNS = [
   ["목","금"],
   ["금","토"]
 ];
-<script>
-const DATA_URL = "https://script.google.com/macros/s/AKfycbzPCmUgjbqx3hj8xi4PNYYpgSk6b6XDJYIF3E_VVB6F9dmZxMH7OxFVix3R5m6f7YY/exec";
-
 // 기본휴무 기준 시작 시점
 const BASE_YEAR = 2026;
 const BASE_MONTH = 1;
@@ -531,9 +532,7 @@ function employeeHtml(item){
         <button class="item-main" type="button" onclick="toggleDetail('${item.id}')">
           <div class="name-row">
             <div class="name">${item.name}</div>
-<div style="font-size:12px;color:red">
-  ${item.name} / ${item.status}
-</div>
+
             <span class="tag">${item.part}</span>
             <span class="status ${getStatusClass(item.status)}">${getStatusIcon(item.status)} ${item.status}</span>
           </div>
