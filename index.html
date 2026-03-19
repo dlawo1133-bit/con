@@ -631,15 +631,7 @@ clearBtnEl.addEventListener("click", () => {
 workingChipEl.addEventListener("click", toggleWorking);
 tabButtons.forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
 
-const CACHE_KEY = "contact_data";
 
-const cached = localStorage.getItem(CACHE_KEY);
-
-if (cached) {
-  DATA = JSON.parse(cached);
-  isLoaded = true;
-  render();
-}
 
 fetch(DATA_URL)
   .then(r => r.json())
