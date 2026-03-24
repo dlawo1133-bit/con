@@ -613,7 +613,7 @@ tabButtons.forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset
 
 
 
-fetch(DATA_URL + "?v=" + Date.now())
+fetch(DATA_URL)
   .then(r => r.json())
   .then(d => {
     LEAVES = d.leaves || [];
